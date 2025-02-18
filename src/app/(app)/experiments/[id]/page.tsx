@@ -19,6 +19,7 @@ import ParseHtml from "@/components/parseHTML"
 import { Badge } from "@/components/ui/badge"
 import { Youtube, BookOpen, Edit } from "lucide-react"
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 export default function ExperimentPage({ params }: { params: { id: string } }) {
   const { id } = params
@@ -90,6 +91,11 @@ export default function ExperimentPage({ params }: { params: { id: string } }) {
             <Badge variant="secondary" className="text-lg py-1 px-3">
               Year {experiment.year}
             </Badge>
+          </div>
+          <div>
+            <Link href={`/experiments/edit/${id}`}>
+              Edit
+            </Link>
           </div>
         </motion.div>
 
