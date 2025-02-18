@@ -67,7 +67,7 @@ export default function ResourcePage() {
   //     });
 
   //     if (!response.ok) throw new Error('Failed to fetch files');
-      
+
   //     const data = await response.json();
   //     setFiles(data.data.files);
   //   } catch (error) {

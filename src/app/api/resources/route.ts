@@ -21,7 +21,6 @@ export async function GET(request: Request) {
         academicYear: true,
         professorName: true,
         cid: true,
-        fileUrl: true,
         createdAt: true
       }
     });

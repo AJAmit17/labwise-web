@@ -1,0 +1,422 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+'use client';
+
+import { useState, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { departments, academicYears, years } from '@/constants/academicData';
+import type { TimeTableSlot, AvailableSlot, TimeTable } from '@/types/timetable';
+import { X, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from 'sonner';
+
+const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const timeSlots = [
+  { time: '9:00-10:00', type: 'class' },
+  { time: '10:00-11:00', type: 'class' },
+  { time: '11:00-11:15', type: 'break', label: 'Short Break' },
+  { time: '11:15-12:15', type: 'class' },
+  { time: '12:15-1:15', type: 'break', label: 'Lunch Break' },
+  { time: '1:15-2:15', type: 'class' },
+  { time: '2:15-2:30', type: 'break', label: 'Short Break' },
+  { time: '2:30-3:30', type: 'class' },
+] as const;
+
+const initialSlot: Omit<AvailableSlot, 'id'> = {
+  subject: '',
+  subjectCode: '',
+  professor: '',
+  type: 'class',
+};
+
+export default function TimeTablePage() {
+  const [department, setDepartment] = useState<string>('');
+  const [year, setYear] = useState<string>('');
+  const [academicYear, setAcademicYear] = useState<string>('');
+  const [slots, setSlots] = useState<TimeTableSlot[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([
+    { id: 'slot-1', ...initialSlot },
+    { id: 'slot-2', ...initialSlot },
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [existingTimeTable, setExistingTimeTable] = useState<TimeTable | null>(null);
+
+  // Load existing time table when department, year, and academicYear change
+  useEffect(() => {
+    const fetchTimeTable = async () => {
+      if (!department || !year || !academicYear) return;
+
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/time-table?department=${department}&year=${year}&academicYear=${academicYear}`
+        );
+        const data = await response.json();
+        
+        if (data.success && data.timeTables.length > 0) {
+          setExistingTimeTable(data.timeTables[0]);
+          // Load existing slots into the current slots state
+          setSlots(data.timeTables[0].slots.map((slot: TimeTableSlot) => ({
+            ...slot,
+            type: 'class'
+          })));
+          toast.info('Loaded existing time table');
+        } else {
+          setExistingTimeTable(null);
+          setSlots([]);
+        }
+      } catch (error) {
+        console.error('Error fetching time table:', error);
+        toast.error('Failed to load existing time table');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTimeTable();
+  }, [department, year, academicYear]);
+
+  const deleteSlot = (slotId: string) => {
+    setSlots(slots.filter(slot => slot.id !== slotId));
+    toast.success('Slot deleted successfully');
+  };
+
+  const deleteAvailableSlot = (slotId: string) => {
+    setAvailableSlots(availableSlots.filter(slot => slot.id !== slotId));
+    toast.success('Available slot deleted');
+  };
+
+  const clearAllSlots = () => {
+    setSlots([]);
+    toast.success('All slots cleared');
+  };
+
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination } = result;
+    const [targetDay, targetTime] = destination.droppableId.split('|');
+
+    if (source.droppableId === 'available-slots' && targetDay && targetTime) {
+      const sourceSlot = availableSlots[source.index];
+      const [startTime, endTime] = targetTime.split('-');
+
+      // Check if slot already exists in this position
+      const existingSlot = slots.find(
+        slot => slot.day === targetDay && slot.startTime === startTime
+      );
+
+      if (existingSlot) {
+        toast.error('A class already exists in this time slot');
+        return;
+      }
+
+      const newSlot = {
+        day: targetDay,
+        startTime,
+        endTime,
+        subject: sourceSlot.subject,
+        subjectCode: sourceSlot.subjectCode,
+        professor: sourceSlot.professor,
+        type: 'class' as const,
+        id: `temp-${Date.now()}-${Math.random()}`
+      };
+
+      setSlots([...slots, newSlot]);
+      toast.success('Added new class to time table');
+    }
+  };
+
+  const addNewSlot = () => {
+    const newId = `slot-${availableSlots.length + 1}`;
+    setAvailableSlots([...availableSlots, { id: newId, ...initialSlot }]);
+  };
+
+  const handleSubmit = async () => {
+    if (!department || !year || !academicYear) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      // If there's an existing time table, delete it first
+      if (existingTimeTable) {
+        const deleteResponse = await fetch(`/api/time-table/${existingTimeTable.id}`, {
+          method: 'DELETE',
+        });
+
+        if (!deleteResponse.ok) {
+          throw new Error('Failed to delete existing time table');
+        }
+      }
+
+      // Remove any temporary IDs or type fields before sending
+      const cleanedSlots = slots.map(({ id, ...slot }) => slot);
+
+      const response = await fetch('/api/time-table', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          department,
+          year: parseInt(year),
+          academicYear,
+          slots: cleanedSlots,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setExistingTimeTable(data.timeTable);
+        toast.success('Time table saved successfully');
+      } else {
+        throw new Error(data.error || 'Failed to save time table');
+      }
+    } catch (error) {
+      console.error('Error saving time table:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save time table');
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-8">
+      <Card className="mb-8">
+        <CardHeader>
+          <h2 className="text-2xl font-bold">Time Table Creation</h2>
+        </CardHeader>
+        <CardContent className="grid grid-cols-3 gap-4">
+          <Select value={department} onValueChange={setDepartment}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Department" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map((dept) => (
+                <SelectItem key={dept} value={dept}>
+                  {dept}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={year} onValueChange={setYear}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={y}>
+                  Year {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={academicYear} onValueChange={setAcademicYear}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Academic Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {academicYears.map((ay) => (
+                <SelectItem key={ay} value={ay}>
+                  {ay}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex gap-8">
+          <Card className="w-96">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <h3 className="text-xl font-semibold">Available Slots</h3>
+              <div className="flex gap-2">
+                <Button onClick={addNewSlot} variant="outline" size="sm">
+                  Add New Slot
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Droppable droppableId="available-slots">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="space-y-4"
+                  >
+                    {availableSlots.map((slot, index) => (
+                      <Draggable key={slot.id} draggableId={slot.id} index={index}>
+                        {(provided) => (
+                          <Card
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="p-4 relative"
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-2"
+                              onClick={() => deleteAvailableSlot(slot.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <div className="space-y-2">
+                              <Input
+                                placeholder="Subject"
+                                value={slot.subject}
+                                onChange={(e) => {
+                                  const newSlots = [...availableSlots];
+                                  newSlots[index].subject = e.target.value;
+                                  setAvailableSlots(newSlots);
+                                }}
+                              />
+                              <Input
+                                placeholder="Subject Code"
+                                value={slot.subjectCode}
+                                onChange={(e) => {
+                                  const newSlots = [...availableSlots];
+                                  newSlots[index].subjectCode = e.target.value;
+                                  setAvailableSlots(newSlots);
+                                }}
+                              />
+                              <Input
+                                placeholder="Professor"
+                                value={slot.professor}
+                                onChange={(e) => {
+                                  const newSlots = [...availableSlots];
+                                  newSlots[index].professor = e.target.value;
+                                  setAvailableSlots(newSlots);
+                                }}
+                              />
+                            </div>
+                          </Card>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </CardContent>
+          </Card>
+
+          <Card className="flex-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <h3 className="text-xl font-semibold">Time Table</h3>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear All Slots
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Are you sure?</DialogTitle>
+                    <p className="text-sm text-muted-foreground">
+                      This action cannot be undone. This will permanently delete all slots from the time table.
+                    </p>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline">Cancel</Button>
+                    <Button variant="destructive" onClick={clearAllSlots}>
+                      Delete All
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent className="p-4">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border p-2">Time</th>
+                    {days.map((day) => (
+                      <th key={day} className="border p-2 font-medium">
+                        {day}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {timeSlots.map((timeSlot) => (
+                    <tr key={timeSlot.time} className={timeSlot.type === 'break' ? 'bg-muted' : ''}>
+                      <td className="border p-2 font-medium">
+                        {timeSlot.time}
+                        {timeSlot.type === 'break' && (
+                          <div className="text-sm text-muted-foreground">{timeSlot.label}</div>
+                        )}
+                      </td>
+                      {days.map((day) => (
+                        <td key={`${day}-${timeSlot.time}`} className="border p-2">
+                          {timeSlot.type === 'break' ? (
+                            <div className="text-center text-muted-foreground">{timeSlot.label}</div>
+                          ) : (
+                            <Droppable droppableId={`${day}|${timeSlot.time}`}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                  className="min-h-[100px]"
+                                >
+                                  {slots
+                                    .filter(
+                                      (slot) =>
+                                        slot.day === day &&
+                                        slot.startTime === timeSlot.time.split('-')[0]
+                                    )
+                                    .map((slot) => (
+                                      <Card key={slot.id} className="p-2 bg-primary/10 relative group">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={() => slot.id && deleteSlot(slot.id)}
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                        <div className="font-medium">{slot.subject}</div>
+                                        <div className="text-sm text-muted-foreground">
+                                          {slot.subjectCode}
+                                        </div>
+                                        <div className="text-sm">{slot.professor}</div>
+                                      </Card>
+                                    ))}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </div>
+      </DragDropContext>
+
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <Card className="p-4">
+            <p>Loading time table...</p>
+          </Card>
+        </div>
+      )}
+
+      <Button 
+        className="mt-8" 
+        onClick={handleSubmit}
+        disabled={isLoading || !department || !year || !academicYear}
+      >
+        {existingTimeTable ? 'Update Time Table' : 'Save Time Table'}
+      </Button>
+    </div>
+  );
+}
