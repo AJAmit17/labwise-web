@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import {
     Form,
     FormControl,
-    FormDescription,
+    // FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Editor } from '@tinymce/tinymce-react';
 import { Textarea } from "../ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const createExperiment = async (experimentData: z.infer<typeof experimentFormSchema>) => {
     try {
@@ -113,246 +114,216 @@ export default function ExperimentForm({
     }
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                {/* YEAR - Integer */}
-                <FormField
-                    control={form.control}
-                    name="year"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                            <FormLabel className=" text-sm">
-                                Year<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Input
-                                    type="number"
-                                    className="bg-input min-h-[56px] rounded-lg border border-primary-foreground"
-                                    {...field}
-                                    onChange={event => field.onChange(+event.target.value)}
+        <Card className="max-w-4xl">
+            <CardHeader>
+                <CardTitle>{type === 'edit' ? 'Edit' : 'Create'} Experiment</CardTitle>
+                <CardDescription>
+                    Fill in the details for your experiment. Required fields are marked with an asterisk (*).
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Basic Details Group */}
+                            <FormField
+                                control={form.control}
+                                name="year"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Year *</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                placeholder="Enter year (1-4)"
+                                                {...field}
+                                                onChange={event => field.onChange(+event.target.value)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="aceYear"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Academic Year *</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g., 2023-2024" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="Branch"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Branch *</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g., CSE, ISE, CSE-DS" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="CCode"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Course Code *</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g., 22CDL32" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {/* Full Width Fields */}
+                        <div className="space-y-6">
+                            <FormField
+                                control={form.control}
+                                name="CName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Course Name *</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g., Advanced Data Structures" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="ExpNo"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Experiment Number *</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Enter experiment number"
+                                                    {...field}
+                                                    onChange={event => field.onChange(+event.target.value)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
                                 />
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Enter Year in Number i.e., 1/2/3/4
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                {/* ACEYEAR */}
-                <FormField
-                    control={form.control}
-                    name="aceYear"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                            <FormLabel className="text-sm">
-                                Academic Year<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Input className="bg-input min-h-[56px] rounded-lg border border-primary-foreground" {...field} />
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Enter Academic Year i.e., 2023-2024
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                {/* BRANCH */}
-                <FormField
-                    control={form.control}
-                    name="Branch"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                            <FormLabel className="text-sm">
-                                Branch<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Input className="bg-input min-h-[56px] rounded-lg border border-primary-foreground" {...field} />
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Enter Branch i.e., CSE/ISE/CSE-DS etc.
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                {/* CCode */}
-                <FormField
-                    control={form.control}
-                    name="CCode"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                            <FormLabel className="text-sm">
-                                Course Code<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Input className="bg-input min-h-[56px] rounded-lg border border-primary-foreground" {...field} />
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Enter Course Code i.e., 22CDL32 etc.
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                {/* CName */}
-                <FormField
-                    control={form.control}
-                    name="CName"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                            <FormLabel className="text-sm">
-                                Course Name<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Input className="bg-input min-h-[56px] rounded-lg border border-primary-foreground" {...field} />
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Enter Course Name i.e., ADS/DBMS etc.
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                {/* ExpNo - Integer */}
-                <FormField
-                    control={form.control}
-                    name="ExpNo"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                            <FormLabel className="text-sm">
-                                Experiment Number<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Input
-                                    type="number"
-                                    className="bg-input min-h-[56px] rounded-lg border border-primary-foreground"
-                                    {...field}
-                                    onChange={event => field.onChange(+event.target.value)}
+
+                                <FormField
+                                    control={form.control}
+                                    name="ExpName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Experiment Name/Title *</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="e.g., Queries on Movie DB" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
                                 />
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Enter Experiment Number i.e., 1/2/3/4 etc.
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                {/* ExpName  */}
-                <FormField
-                    control={form.control}
-                    name="ExpName"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                            <FormLabel className="text-sm">
-                                Experiment Name/Title<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Input className="bg-input min-h-[56px] rounded-lg border border-primary-foreground" {...field} />
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Enter Experiment Name i.e., Quries on Movie DB ,etc.
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                {/* ExpDesc */}
-                <FormField
-                    control={form.control}
-                    name="ExpDesc"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                            <FormLabel className="text-sm">
-                                Experiment Description<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Textarea
-                                    placeholder="Write the Description here..."
-                                    className="bg-input min-h-[300px] rounded-lg border border-primary-foreground"
-                                    {...field}
-                                />
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Enter Description of the Experiment.
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                {/* ExpSoln */}
-                <FormField
-                    control={form.control}
-                    name="ExpSoln"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col w-full gap-3">
-                            <FormLabel className="text-sm">
-                                Experiment Solution<span className="ml-1 font-bold text-destructive">*</span>
-                            </FormLabel>
-                            <FormControl className="mt-3.5">
-                                <Editor
-                                    apiKey={"zm5qwqqx3k9r97pxx4z8q8eovkf2gfkfmo3fnwfuemt0ippy"}
-                                    // apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-                                    onInit={(evt, editor) => {
-                                        editorRef.current = editor;
-                                    }}
-                                    onBlur={field.onBlur}
-                                    onEditorChange={(content) => field.onChange(content)}
-                                    initialValue={parsedExperimentDetails ? parsedExperimentDetails.ExpSoln || "" : ""}
-                                    init={{
-                                        height: 350,
-                                        menubar: false,
-                                        plugins: [
-                                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                                            'anchor', 'searchreplace', 'visualblocks', 'codesample', 'fullscreen',
-                                            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                                        ],
-                                        toolbar: 'undo redo | blocks | ' +
-                                            'codesample | bold italic forecolor | alignleft aligncenter |' +
-                                            'alignright alignjustify | bullist numlist outdent indent | ' +
-                                            'removeformat | help',
-                                        content_style: 'body { font-family:Inter; font-size:16px }',
-                                        skin: "oxide-dark",
-                                        content_css: "dark"
-                                    }}
-                                >
-                                </Editor>
-                            </FormControl>
-                            <FormDescription className="mt-2.5">
-                                Upload all the Text and Code Solution of the Experiment
-                            </FormDescription>
-                            <FormMessage className="font-semibold text-destructive" />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="youtubeLink"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>YouTube Link</FormLabel>
-                            <FormControl>
-                                <Input
-                                    placeholder="https://youtube.com/watch?v=..."
-                                    {...field}
-                                />
-                            </FormControl>
-                            <FormDescription>
-                                Paste the YouTube video URL for this experiment
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <Button
-                    className=" bg-purple-800 text-white"
-                    type="submit"
-                    disabled={isSubmitting}
-                >
-                    {type === 'edit' ? 'Update' : 'Upload'} Experiment
-                </Button>
-            </form>
-        </Form>
+                            </div>
+
+                            <FormField
+                                control={form.control}
+                                name="ExpDesc"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Experiment Description *</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Write the Description here..."
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="ExpSoln"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col w-full gap-3">
+                                        <FormLabel>Experiment Solution *</FormLabel>
+                                        <FormControl>
+                                            <Editor
+                                                apiKey={"zm5qwqqx3k9r97pxx4z8q8eovkf2gfkfmo3fnwfuemt0ippy"}
+                                                // apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                                                onInit={(evt, editor) => {
+                                                    editorRef.current = editor;
+                                                }}
+                                                onBlur={field.onBlur}
+                                                onEditorChange={(content) => field.onChange(content)}
+                                                initialValue={parsedExperimentDetails ? parsedExperimentDetails.ExpSoln || "" : ""}
+                                                init={{
+                                                    height: 350,
+                                                    menubar: false,
+                                                    plugins: [
+                                                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                                                        'anchor', 'searchreplace', 'visualblocks', 'codesample', 'fullscreen',
+                                                        'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                                                    ],
+                                                    toolbar: 'undo redo | blocks | ' +
+                                                        'codesample | bold italic forecolor | alignleft aligncenter |' +
+                                                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                                                        'removeformat | help',
+                                                    content_style: 'body { font-family:Inter; font-size:16px }',
+                                                    skin: "oxide-dark",
+                                                    content_css: "dark"
+                                                }}
+                                            >
+                                            </Editor>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="youtubeLink"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>YouTube Link</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="https://youtube.com/watch?v=..."
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <Button
+                            className=" bg-purple-800 text-white"
+                            type="submit"
+                            disabled={isSubmitting}
+                        >
+                            {type === 'edit' ? 'Update' : 'Upload'} Experiment
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
     )
 }
