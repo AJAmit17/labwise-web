@@ -20,18 +20,18 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { Label } from '@/components/ui/label';
+import { format } from 'date-fns';
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const timeSlots = [
-  { time: '9:00-10:00', type: 'class' },
-  { time: '10:00-11:00', type: 'class' },
-  { time: '11:00-11:15', type: 'break', label: 'Short Break' },
-  { time: '11:15-12:15', type: 'class' },
-  { time: '12:15-1:15', type: 'break', label: 'Lunch Break' },
-  { time: '1:15-2:15', type: 'class' },
-  { time: '2:15-2:30', type: 'break', label: 'Short Break' },
-  { time: '2:30-3:30', type: 'class' },
-] as const;
+
+interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+  type: 'class' | 'break';
+  label?: string;
+}
 
 const initialSlot: Omit<AvailableSlot, 'id'> = {
   subject: '',
@@ -40,10 +40,27 @@ const initialSlot: Omit<AvailableSlot, 'id'> = {
   type: 'class',
 };
 
+const sections = ['A', 'B', 'C', 'D', 'E'] as const;
+
+const isTimeOverlapping = (start1: string, end1: string, start2: string, end2: string) => {
+  const [h1, m1] = start1.split(':').map(Number);
+  const [h2, m2] = end1.split(':').map(Number);
+  const [h3, m3] = start2.split(':').map(Number);
+  const [h4, m4] = end2.split(':').map(Number);
+
+  const time1 = h1 * 60 + m1;
+  const time2 = h2 * 60 + m2;
+  const time3 = h3 * 60 + m3;
+  const time4 = h4 * 60 + m4;
+
+  return (time1 < time4 && time2 > time3);
+};
+
 export default function TimeTablePage() {
   const [department, setDepartment] = useState<string>('');
   const [year, setYear] = useState<string>('');
   const [academicYear, setAcademicYear] = useState<string>('');
+  const [section, setSection] = useState<string>('');
   const [slots, setSlots] = useState<TimeTableSlot[]>([]);
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([
     { id: 'slot-1', ...initialSlot },
@@ -51,30 +68,69 @@ export default function TimeTablePage() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [existingTimeTable, setExistingTimeTable] = useState<TimeTable | null>(null);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
+    {
+      id: '1',
+      startTime: '09:00',
+      endTime: '10:00',
+      type: 'class'
+    }
+  ]);
 
-  // Load existing time table when department, year, and academicYear change
+  // Load existing time table when department, year, academicYear, and section change
   useEffect(() => {
     const fetchTimeTable = async () => {
-      if (!department || !year || !academicYear) return;
+      if (!department || !year || !academicYear || !section) return;
 
       setIsLoading(true);
       try {
         const response = await fetch(
-          `/api/time-table?department=${department}&year=${year}&academicYear=${academicYear}`
+          `/api/time-table?department=${department}&year=${year}&academicYear=${academicYear}&section=${section}`
         );
         const data = await response.json();
-        
+
         if (data.success && data.timeTables.length > 0) {
           setExistingTimeTable(data.timeTables[0]);
-          // Load existing slots into the current slots state
+          
+          // Extract unique time slots from existing data
+          const uniqueTimeSlots = Array.from(
+            new Set(
+              data.timeTables[0].slots.map((slot: TimeTableSlot) => 
+                `${slot.startTime}-${slot.endTime}`
+              )
+            )
+          );
+
+          // Create time slots array
+          const newTimeSlots: TimeSlot[] = uniqueTimeSlots.map((timeSlot: unknown, index) => {
+            const [startTime, endTime] = (timeSlot as string).split('-');
+            return {
+              id: `existing-${index}`,
+              startTime,
+              endTime,
+              type: 'class' as const
+            };
+          }).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+          setTimeSlots(newTimeSlots);
+          
+          // Set existing slots
           setSlots(data.timeTables[0].slots.map((slot: TimeTableSlot) => ({
             ...slot,
-            type: 'class'
+            type: 'class',
+            id: `slot-${Math.random()}`
           })));
+          
           toast.info('Loaded existing time table');
         } else {
           setExistingTimeTable(null);
           setSlots([]);
+          setTimeSlots([{
+            id: '1',
+            startTime: '09:00',
+            endTime: '10:00',
+            type: 'class'
+          }]);
         }
       } catch (error) {
         console.error('Error fetching time table:', error);
@@ -85,7 +141,7 @@ export default function TimeTablePage() {
     };
 
     fetchTimeTable();
-  }, [department, year, academicYear]);
+  }, [department, year, academicYear, section]);
 
   const deleteSlot = (slotId: string) => {
     setSlots(slots.filter(slot => slot.id !== slotId));
@@ -144,7 +200,7 @@ export default function TimeTablePage() {
   };
 
   const handleSubmit = async () => {
-    if (!department || !year || !academicYear) {
+    if (!department || !year || !academicYear || !section) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -171,6 +227,7 @@ export default function TimeTablePage() {
           department,
           year: parseInt(year),
           academicYear,
+          section,
           slots: cleanedSlots,
         }),
       });
@@ -186,6 +243,69 @@ export default function TimeTablePage() {
       console.error('Error saving time table:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to save time table');
     }
+  };
+
+  const addTimeSlot = () => {
+    const lastSlot = timeSlots[timeSlots.length - 1];
+    const newStartTime = lastSlot ? lastSlot.endTime : '09:00';
+    const [hours, minutes] = newStartTime.split(':');
+    const endTime = `${String(parseInt(hours) + 1).padStart(2, '0')}:${minutes}`;
+
+    // Check for overlapping with existing time slots
+    const hasOverlap = timeSlots.some(slot => 
+      isTimeOverlapping(slot.startTime, slot.endTime, newStartTime, endTime)
+    );
+
+    if (hasOverlap) {
+      toast.error('New time slot overlaps with existing slots');
+      return;
+    }
+
+    setTimeSlots([
+      ...timeSlots,
+      {
+        id: `slot-${timeSlots.length + 1}`,
+        startTime: newStartTime,
+        endTime: endTime,
+        type: 'class'
+      }
+    ]);
+  };
+
+  const updateTimeSlot = (id: string, field: 'startTime' | 'endTime' | 'type' | 'label', value: string) => {
+    setTimeSlots(slots => {
+      const newSlots = [...slots];
+      const slotIndex = newSlots.findIndex(slot => slot.id === id);
+      
+      if (slotIndex === -1) return slots;
+
+      const updatedSlot = { ...newSlots[slotIndex], [field]: value };
+
+      // Check for overlapping only if updating time
+      if (field === 'startTime' || field === 'endTime') {
+        const hasOverlap = newSlots.some((slot, index) => 
+          index !== slotIndex && 
+          isTimeOverlapping(
+            slot.startTime, 
+            slot.endTime, 
+            field === 'startTime' ? value : updatedSlot.startTime,
+            field === 'endTime' ? value : updatedSlot.endTime
+          )
+        );
+
+        if (hasOverlap) {
+          toast.error('Time slot overlaps with existing slots');
+          return slots;
+        }
+      }
+
+      newSlots[slotIndex] = updatedSlot;
+      return newSlots;
+    });
+  };
+
+  const deleteTimeSlot = (id: string) => {
+    setTimeSlots(slots => slots.filter(slot => slot.id !== id));
   };
 
   return (
@@ -212,7 +332,7 @@ export default function TimeTablePage() {
           <CardHeader>
             <h2 className="text-2xl font-bold">Time Table Creation</h2>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-4">
+          <CardContent className="grid grid-cols-4 gap-4">
             <Select value={department} onValueChange={setDepartment}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Department" />
@@ -234,6 +354,19 @@ export default function TimeTablePage() {
                 {years.map((y) => (
                   <SelectItem key={y} value={y}>
                     Year {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={section} onValueChange={setSection}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Section" />
+              </SelectTrigger>
+              <SelectContent>
+                {sections.map((sec) => (
+                  <SelectItem key={sec} value={sec}>
+                    Section {sec}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -357,6 +490,68 @@ export default function TimeTablePage() {
                 </Dialog>
               </CardHeader>
               <CardContent className="p-4">
+                <Card className="mb-8">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <h3 className="text-xl font-semibold">Time Slots</h3>
+                    <Button onClick={addTimeSlot} variant="outline">
+                      Add Time Slot
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {timeSlots.map((slot) => (
+                        <div key={slot.id} className="flex items-center gap-4 p-2 border rounded">
+                          <div className="grid grid-cols-2 gap-4 flex-1">
+                            <div className="space-y-2">
+                              <Label>Start Time</Label>
+                              <Input
+                                type="time"
+                                value={slot.startTime}
+                                onChange={(e) => updateTimeSlot(slot.id, 'startTime', e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>End Time</Label>
+                              <Input
+                                type="time"
+                                value={slot.endTime}
+                                onChange={(e) => updateTimeSlot(slot.id, 'endTime', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <Select
+                            value={slot.type}
+                            onValueChange={(value) => updateTimeSlot(slot.id, 'type', value)}
+                          >
+                            <SelectTrigger className="w-[150px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="class">Class/Lab</SelectItem>
+                              <SelectItem value="break">Break</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {slot.type === 'break' && (
+                            <Input
+                              placeholder="Break Label"
+                              value={slot.label || ''}
+                              onChange={(e) => updateTimeSlot(slot.id, 'label', e.target.value)}
+                              className="w-[200px]"
+                            />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteTimeSlot(slot.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <table className="w-full border-collapse">
                   <thead>
                     <tr>
@@ -370,19 +565,19 @@ export default function TimeTablePage() {
                   </thead>
                   <tbody>
                     {timeSlots.map((timeSlot) => (
-                      <tr key={timeSlot.time} className={timeSlot.type === 'break' ? 'bg-muted' : ''}>
+                      <tr key={timeSlot.id} className={timeSlot.type === 'break' ? 'bg-muted' : ''}>
                         <td className="border p-2 font-medium">
-                          {timeSlot.time}
+                          {`${timeSlot.startTime}-${timeSlot.endTime}`}
                           {timeSlot.type === 'break' && (
                             <div className="text-sm text-muted-foreground">{timeSlot.label}</div>
                           )}
                         </td>
                         {days.map((day) => (
-                          <td key={`${day}-${timeSlot.time}`} className="border p-2">
+                          <td key={`${day}-${timeSlot.startTime}`} className="border p-2">
                             {timeSlot.type === 'break' ? (
                               <div className="text-center text-muted-foreground">{timeSlot.label}</div>
                             ) : (
-                              <Droppable droppableId={`${day}|${timeSlot.time}`}>
+                              <Droppable droppableId={`${day}|${timeSlot.startTime}-${timeSlot.endTime}`}>
                                 {(provided) => (
                                   <div
                                     ref={provided.innerRef}
@@ -393,7 +588,7 @@ export default function TimeTablePage() {
                                       .filter(
                                         (slot) =>
                                           slot.day === day &&
-                                          slot.startTime === timeSlot.time.split('-')[0]
+                                          slot.startTime === timeSlot.startTime
                                       )
                                       .map((slot) => (
                                         <Card key={slot.id} className="p-2 bg-primary/10 relative group">
@@ -436,10 +631,10 @@ export default function TimeTablePage() {
           </div>
         )}
 
-        <Button 
-          className="mt-8" 
+        <Button
+          className="mt-8"
           onClick={handleSubmit}
-          disabled={isLoading || !department || !year || !academicYear}
+          disabled={isLoading || !department || !year || !academicYear || !section}
         >
           {existingTimeTable ? 'Update Time Table' : 'Save Time Table'}
         </Button>

@@ -44,6 +44,7 @@ model TimeTable {
   id           String          @id @default(auto()) @map("_id") @db.ObjectId
   department   String
   year         Int
+  section      String         
   academicYear String
   slots        TimeTableSlot[]
   createdAt    DateTime       @default(now())

@@ -10,8 +10,9 @@ export async function GET(request: Request) {
     const department = searchParams.get('department');
     const year = searchParams.get('year');
     const academicYear = searchParams.get('academicYear');
+    const section = searchParams.get('section');
 
-    if (!department || !year || !academicYear) {
+    if (!department || !year || !academicYear || !section) {
       return NextResponse.json(
         { success: false, error: 'Missing required query parameters' },
         { status: 400 }
@@ -22,7 +23,8 @@ export async function GET(request: Request) {
       where: {
         department,
         year: parseInt(year),
-        academicYear
+        academicYear,
+        section
       },
       include: {
         slots: true
@@ -45,7 +47,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { department, year, academicYear, slots } = data;
+    const { department, year, academicYear, section, slots } = data;
 
     // Create the time table first
     const timeTable = await prisma.timeTable.create({
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
         department,
         year,
         academicYear,
+        section,
         slots: {
           create: slots.map((slot: any) => ({
             day: slot.day,
