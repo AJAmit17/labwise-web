@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { requireTeacher } from '@/lib/session';
 
 export async function GET(request: Request) {
   try {
@@ -69,6 +70,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await requireTeacher();
     const data = await request.json();
 
     // Validate required fields
@@ -100,6 +102,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, resource });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Resource creation error:', error);
     return NextResponse.json(
       { 

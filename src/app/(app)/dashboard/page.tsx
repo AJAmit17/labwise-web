@@ -1,5 +1,8 @@
 "use client"
 
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -21,6 +24,23 @@ import { BranchDistribution } from "@/components/dashboard/branch-distribution"
 import { RecentExperiments } from "@/components/dashboard/recent-experiments"
 
 export default function Page() {
+    const { data: session, status } = useSession()
+    const router = useRouter()
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/auth/signin")
+        }
+    }, [status, router])
+
+    if (status === "loading") {
+        return <div>Loading...</div>
+    }
+
+    if (!session) {
+        return null
+    }
+
     return (
         <div>
             <SidebarInset>

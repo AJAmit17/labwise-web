@@ -1,5 +1,8 @@
+/* eslint-disable @next/next/no-async-client-component */
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,9 +14,24 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@/components/ui/breadcrumb";
+import { requireTeacher } from '@/lib/session';
 
-const ApiListing = () => {
+export default async function Page() {
+    await requireTeacher();
+    return <ApiListing />;
+}
+
+function ApiListing() {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!session?.user || session.user.role !== "TEACHER") {
+      router.push('/unauthorized');
+    }
+  }, [session, router]);
+
   const apis: ApiSection = {
     timeTable: [
       {
@@ -198,6 +216,4 @@ const ApiListing = () => {
       </div>
     </div>
   );
-};
-
-export default ApiListing;
+}

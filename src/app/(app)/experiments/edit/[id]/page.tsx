@@ -1,9 +1,6 @@
-"use client"
-
 import React from 'react';
+
 import ExperimentForm from '@/components/forms/ExperimentForm'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useEffect, useState } from 'react'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,32 +11,22 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { requireTeacher } from '@/lib/session';
 
-export default function EditExperimentPage({ params }: { params: { id: string } }) {
+export default async function EditExperimentPage({ params }: { params: { id: string } }) {
+  await requireTeacher();
+  
   const { id } = params;
-  const [experimentDetails, setExperimentDetails] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchExperiment = async () => {
-      try {
-        const response = await fetch(`/api/experiments/${id}`)
-        const data = await response.json()
-        if (data.success) {
-          setExperimentDetails(JSON.stringify(data.data))
-        }
-      } catch (error) {
-        console.error('Error fetching experiment:', error)
-      } finally {
-        setLoading(false)
-      }
+  let experimentDetails = null;
+  
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/experiments/${id}`);
+    const data = await response.json();
+    if (data.success) {
+      experimentDetails = JSON.stringify(data.data);
     }
-
-    fetchExperiment()
-  }, [id]) // use the unwrapped id in dependency array
-
-  if (loading) {
-    return <Skeleton className="w-full h-[600px]" />
+  } catch (error) {
+    console.error('Error fetching experiment:', error);
   }
 
   return (

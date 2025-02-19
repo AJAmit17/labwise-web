@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { requireTeacher } from '@/lib/session';
 
 export async function GET(request: Request) {
   try {
@@ -46,6 +47,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await requireTeacher();
     const data = await request.json();
     const { department, year, academicYear, section, slots } = data;
 
@@ -74,6 +76,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, timeTable });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('Error creating time table:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create time table' },

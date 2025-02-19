@@ -1,5 +1,11 @@
-import ExperimentForm from '@/components/forms/ExperimentForm'
-import React from 'react'
+/* eslint-disable @next/next/no-async-client-component */
+'use client';
+
+import React, { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { requireTeacher } from '@/lib/session';
+import ExperimentForm from '@/components/forms/ExperimentForm';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,7 +17,21 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 
-const Page = () => {
+export default async function Page() {
+    await requireTeacher();
+    return <AddExperimentPage />;
+}
+
+function AddExperimentPage() {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!session?.user || session.user.role !== "TEACHER") {
+      router.push('/unauthorized');
+    }
+  }, [session, router]);
+
   return (
     <SidebarInset>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -38,7 +58,5 @@ const Page = () => {
         <ExperimentForm />
       </div>
     </SidebarInset>
-  )
+  );
 }
-
-export default Page

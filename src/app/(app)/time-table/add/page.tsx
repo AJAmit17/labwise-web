@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-async-client-component */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
@@ -21,7 +22,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Label } from '@/components/ui/label';
-import { format } from 'date-fns';
+import { requireTeacher } from '@/lib/session';
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -56,7 +57,13 @@ const isTimeOverlapping = (start1: string, end1: string, start2: string, end2: s
   return (time1 < time4 && time2 > time3);
 };
 
-export default function TimeTablePage() {
+
+export default async function AddTimeTablePage() {
+  await requireTeacher();
+  return <TimeTablePage />;
+}
+
+function TimeTablePage() {
   const [department, setDepartment] = useState<string>('');
   const [year, setYear] = useState<string>('');
   const [academicYear, setAcademicYear] = useState<string>('');
@@ -91,11 +98,11 @@ export default function TimeTablePage() {
 
         if (data.success && data.timeTables.length > 0) {
           setExistingTimeTable(data.timeTables[0]);
-          
+
           // Extract unique time slots from existing data
           const uniqueTimeSlots = Array.from(
             new Set(
-              data.timeTables[0].slots.map((slot: TimeTableSlot) => 
+              data.timeTables[0].slots.map((slot: TimeTableSlot) =>
                 `${slot.startTime}-${slot.endTime}`
               )
             )
@@ -113,14 +120,14 @@ export default function TimeTablePage() {
           }).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
           setTimeSlots(newTimeSlots);
-          
+
           // Set existing slots
           setSlots(data.timeTables[0].slots.map((slot: TimeTableSlot) => ({
             ...slot,
             type: 'class',
             id: `slot-${Math.random()}`
           })));
-          
+
           toast.info('Loaded existing time table');
         } else {
           setExistingTimeTable(null);
@@ -252,7 +259,7 @@ export default function TimeTablePage() {
     const endTime = `${String(parseInt(hours) + 1).padStart(2, '0')}:${minutes}`;
 
     // Check for overlapping with existing time slots
-    const hasOverlap = timeSlots.some(slot => 
+    const hasOverlap = timeSlots.some(slot =>
       isTimeOverlapping(slot.startTime, slot.endTime, newStartTime, endTime)
     );
 
@@ -276,18 +283,18 @@ export default function TimeTablePage() {
     setTimeSlots(slots => {
       const newSlots = [...slots];
       const slotIndex = newSlots.findIndex(slot => slot.id === id);
-      
+
       if (slotIndex === -1) return slots;
 
       const updatedSlot = { ...newSlots[slotIndex], [field]: value };
 
       // Check for overlapping only if updating time
       if (field === 'startTime' || field === 'endTime') {
-        const hasOverlap = newSlots.some((slot, index) => 
-          index !== slotIndex && 
+        const hasOverlap = newSlots.some((slot, index) =>
+          index !== slotIndex &&
           isTimeOverlapping(
-            slot.startTime, 
-            slot.endTime, 
+            slot.startTime,
+            slot.endTime,
             field === 'startTime' ? value : updatedSlot.startTime,
             field === 'endTime' ? value : updatedSlot.endTime
           )

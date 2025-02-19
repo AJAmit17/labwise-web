@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { requireTeacher } from '@/lib/session';
 
 const experimentSchema = z.object({
   year: z.number(),
@@ -68,6 +69,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await requireTeacher();
     const body = await request.json();
     
     // Validate input using zod schema
@@ -108,6 +110,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, data: experiment }, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     console.error('POST experiment error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create experiment' },

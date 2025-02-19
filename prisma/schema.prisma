@@ -13,6 +13,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
+  name          String?
+  password      String
+  role          Role      @default(STUDENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum Role {
+  TEACHER    // Teachers have admin privileges
+  STUDENT
+}
+
 model Experiment {
   id          String  @id @default(auto()) @map("_id") @db.ObjectId
   year        Int

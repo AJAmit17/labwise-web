@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-async-client-component */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
@@ -6,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { pinata } from '@/lib/pinata';
 import { FileUpload } from '@/components/fileUpload';
-import { Loader2, RefreshCw, Download } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -29,20 +30,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { departments, professorsByDepartment, academicYears, years } from '@/constants/academicData';
 import { resourceSchema, type ResourceFormData } from '@/lib/schemas/resource';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { requireTeacher } from '@/lib/session';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
-interface PinataFile {
-  id: string;
-  name: string;
-  cid: string;
-  size: number;
-  created_at: string;
+export default async function AddResourcesPage() {
+    await requireTeacher();
+    return <ResourcePage />
 }
 
-export default function ResourcePage() {
-  // const [files, setFiles] = useState<PinataFile[]>([]);
+function ResourcePage() {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!session?.user || session.user.role !== "TEACHER") {
+      router.push('/unauthorized');
+    }
+  }, [session, router]);
+
   const [isUploading, setIsUploading] = useState(false);
-  // const [isLoading, setIsLoading] = useState(true);
-  // const [error, setError] = useState<string | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<string>(departments[0]);
 
   const form = useForm<ResourceFormData>({
@@ -57,27 +64,6 @@ export default function ResourcePage() {
       professorName: '',
     },
   });
-
-  // const fetchFiles = async () => {
-  //   try {
-  //     setIsLoading(true);
-  //     const response = await fetch('https://api.pinata.cloud/v3/files', {
-  //       headers: {
-  //         'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIxMDlhNTIyNC03YzFhLTQ4NzMtOTFlMi1hMGNlY2M3YTQyNjYiLCJlbWFpbCI6ImFtaXRhY2hhcnlhMjYzQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiI0YWNlNjM2NGE5ODIzMTcyOWI3YSIsInNjb3BlZEtleVNlY3JldCI6IjIyODAyODIyNWQ2NmZiOGY2YTM3YzU3MTNhYWQ1OTkwNjRhZDMwNTMwMDQ1NWE5NTU1OWE3MmIxOGNhNWYwZmYiLCJleHAiOjE3NjQzMjk0NDd9.LLW_F-su6evJuh_1oNoqUWa76NnbhJD-wmuslKCOwtg`,
-  //       },
-  //     });
-
-  //     if (!response.ok) throw new Error('Failed to fetch files');
-
-  //     const data = await response.json();
-  //     setFiles(data.data.files);
-  //   } catch (error) {
-  //     console.error('Error:', error);
-  //     setError('Failed to fetch files');
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   const onSubmit = async (data: ResourceFormData) => {
     try {
@@ -106,24 +92,12 @@ export default function ResourcePage() {
       }
 
       form.reset();
-      // fetchFiles();
     } catch (error) {
       console.error('Upload error:', error);
     } finally {
       setIsUploading(false);
     }
   };
-
-  // useEffect(() => {
-  //   fetchFiles();
-  // }, []);
-
-  // const formatFileSize = (bytes: number) => {
-  //   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  //   if (bytes === 0) return '0 Bytes';
-  //   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  //   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
-  // };
 
   return (
     <div className="flex flex-col w-full">
@@ -147,14 +121,6 @@ export default function ResourcePage() {
       <div className="container mr-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Resource Management</h1>
-          {/* <Button 
-            // onClick={fetchFiles}
-            variant="outline"
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button> */}
         </div>
 
         <Card className="p-6 mb-6">
@@ -321,40 +287,6 @@ export default function ResourcePage() {
             </form>
           </Form>
         </Card>
-
-        {/* <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">All Files</h2>
-          {isLoading ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {files.map((file) => (
-                <div 
-                  key={file.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                >
-                  <div>
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-gray-500">
-                      Size: {formatFileSize(file.size)} • 
-                      Uploaded: {new Date(file.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${file.cid}`, '_blank')}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card> */}
       </div>
     </div>
   );
