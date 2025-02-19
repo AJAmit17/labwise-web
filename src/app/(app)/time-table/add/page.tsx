@@ -327,7 +327,7 @@ export default function TimeTablePage() {
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="container mx-auto p-6">
+      <div className="container mr-auto p-6">
         <Card className="mb-8">
           <CardHeader>
             <h2 className="text-2xl font-bold">Time Table Creation</h2>

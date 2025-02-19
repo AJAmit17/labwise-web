@@ -4,7 +4,7 @@ import React, { useEffect } from 'react'
 
 import Prism from "prismjs"
 import parse from "html-react-parser"
-// import { CopyIcon } from '@radix-ui/react-icons'
+import { CopyIcon } from 'lucide-react'
 import { Button } from './ui/button';
 // import toast from 'react-hot-toast';
 import {
@@ -66,8 +66,7 @@ const ParseHtml = ({ data, type }: Props) => {
                   <Tooltip>
                     <TooltipTrigger>
                       <Button onClick={copyCode}>
-                        {/* <CopyIcon /> */}
-                        Copy
+                        <CopyIcon />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
