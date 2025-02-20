@@ -8,7 +8,7 @@ export async function auth() {
 }
 
 export async function requireTeacher() {
-    const session = await auth()
+    const session = await getServerSession(authOptions)
 
     if (!session) {
         redirect("/auth/signin")
