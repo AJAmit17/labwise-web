@@ -16,7 +16,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-export default function ApiListingClient() {
+export default function ApiListingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -220,5 +220,3 @@ export default function ApiListingClient() {
     </div>
   );
 }
-
-export { ApiListingClient };
