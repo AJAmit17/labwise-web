@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-async-client-component */
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,22 +15,25 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { requireTeacher } from '@/lib/session';
 
-export default async function Page() {
-    await requireTeacher();
-    return <ApiListing />;
-}
-
-function ApiListing() {
-  const { data: session } = useSession();
+export default function ApiListingClient() {
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (status === 'loading') return;
+
     if (!session?.user || session.user.role !== "TEACHER") {
       router.push('/unauthorized');
+    } else {
+      setLoading(false);
     }
-  }, [session, router]);
+  }, [session, status, router]);
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
 
   const apis: ApiSection = {
     timeTable: [
@@ -156,7 +159,7 @@ function ApiListing() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">API Documentation</h1>
         </div>
-        
+
         <Tabs defaultValue="timeTable">
           <TabsList className="mb-4">
             <TabsTrigger value="timeTable">Time Table</TabsTrigger>
@@ -178,7 +181,7 @@ function ApiListing() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-600 mb-4">{api.description}</p>
-                    
+
                     {api.params && (
                       <div className="mb-3">
                         <h4 className="font-semibold mb-2">Parameters:</h4>
@@ -217,3 +220,5 @@ function ApiListing() {
     </div>
   );
 }
+
+export { ApiListingClient };

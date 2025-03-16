@@ -10,7 +10,7 @@ export default function AppLayout({
         <SidebarProvider>
             <div className="flex h-screen w-full">
                 <AppSidebar />
-                <div className="flex-grow ml-4">
+                <div className="flex-grow">
                     {children}
                 </div>
             </div>

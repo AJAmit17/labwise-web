@@ -29,10 +29,12 @@ const navigationData = {
         {
           title: "View Experiments",
           url: "/experiments",
+          roles: ["PUBLIC", "STUDENT", "TEACHER"], // PUBLIC means accessible without login
         },
         {
           title: "Add Experiment",
           url: "/experiments/add",
+          roles: ["TEACHER"], // Only teachers can add
         },
       ],
     },
@@ -43,34 +45,41 @@ const navigationData = {
         {
           title: "View Resources",
           url: "/view-resources",
+          roles: ["PUBLIC", "STUDENT", "TEACHER"], // PUBLIC means accessible without login
         },
         {
           title: "Add Resources",
           url: "/add-resources",
+          roles: ["TEACHER"], // Only teachers can add
         },
       ],
     },
     {
       title: "Timetable",
       url: "/timetable",
+      roles: ["TEACHER"],
       items: [
-        {
-          title: "View Timetable",
-          url: "/time-table",
-        },
+        // {
+        //   title: "View Timetable",
+        //   url: "/time-table",
+        //   roles: ["PUBLIC", "STUDENT", "TEACHER"], // PUBLIC means accessible without login
+        // },
         {
           title: "Add Schedule",
           url: "/time-table/add",
+          roles: ["TEACHER"], // Only teachers can add
         },
       ],
     },
     {
       title: "API Documentation",
       url: "/api-listing",
+      roles: ["TEACHER"], // Only teachers can view API documentation
       items: [
         {
           title: "API Listing",
           url: "/api-listing",
+          roles: ["TEACHER"], // Only teachers can access
         },
       ],
     },
@@ -79,6 +88,21 @@ const navigationData = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession()
+  const userRole = session?.user?.role || null
+
+  // Helper function to check if user has access to an item
+  const hasAccess = (itemRoles?: string[]) => {
+    if (!itemRoles) return false
+    
+    // Allow access if the item has the PUBLIC role, regardless of login status
+    if (itemRoles.includes("PUBLIC")) return true
+    
+    // If user is not logged in and the item isn't public, don't show
+    if (!userRole) return false
+    
+    // Show if user role is in the allowed roles
+    return itemRoles.includes(userRole)
+  }
 
   return (
     <Sidebar {...props}>
@@ -89,22 +113,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <ThemeSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        {navigationData.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((subItem) => (
-                  <SidebarMenuItem key={subItem.title}>
-                    <SidebarMenuButton asChild>
-                      <a href={subItem.url}>{subItem.title}</a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {navigationData.navMain
+          // Only show section if user has role access to at least one item in the section
+          .filter(section => !section.roles || hasAccess(section.roles) ||
+            section.items.some(item => !item.roles || hasAccess(item.roles)))
+          .map((section) => (
+            <SidebarGroup key={section.title}>
+              <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {section.items
+                    // Only show items that user has access to
+                    .filter(item => !item.roles || hasAccess(item.roles))
+                    .map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <a href={item.url}>{item.title}</a>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
       </SidebarContent>
       <div className="mt-auto p-4 border-t">
         {session ? (
@@ -121,10 +152,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <span className="text-xs text-muted-foreground">{session.user?.role}</span>
               </div>
             </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="w-full" 
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
               onClick={() => signOut()}
             >
               <LogOut className="mr-2 h-4 w-4" />

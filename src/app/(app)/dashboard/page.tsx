@@ -1,8 +1,6 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -15,8 +13,9 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BookOpen, FilePlus, GraduationCap, Layout, School } from "lucide-react"
+import { BookOpen, FilePlus, GraduationCap, Layout, School, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 
 import { StatCard } from "@/components/dashboard/stat-card"
@@ -25,20 +24,46 @@ import { RecentExperiments } from "@/components/dashboard/recent-experiments"
 
 export default function Page() {
     const { data: session, status } = useSession()
-    const router = useRouter()
-
-    useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/auth/signin")
-        }
-    }, [status, router])
 
     if (status === "loading") {
-        return <div>Loading...</div>
+        return (
+            <div className="flex items-center justify-center h-screen bg-background">
+                <div className="w-full max-w-md space-y-4">
+                    <Skeleton className="h-12 w-3/4 mx-auto" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                </div>
+            </div>
+        )
     }
 
-    if (!session) {
-        return null
+    const isTeacher = session?.user?.role === "TEACHER"
+
+    if (!isTeacher) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50/50 to-white dark:from-slate-900 dark:to-slate-950">
+                <div className="max-w-3xl mx-auto text-center px-6 py-16">
+                    <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl mb-6">
+                        Welcome to <span className="text-blue-600 dark:text-blue-400">LabWise</span>
+                    </h1>
+
+                    <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+                        A streamlined platform for managing laboratory experiments and resources.
+                        Access your experiments, view instructions, and track progress all in one place.
+                    </p>
+
+                    <div className="flex flex-wrap justify-center gap-4 mb-10">
+                        <Button size="lg" className="gap-2">
+                            <Link href="/experiments">Browse Experiments</Link>
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                        <Button size="lg" variant="outline">
+                            Learn More
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -56,7 +81,6 @@ export default function Page() {
                     </Breadcrumb>
                 </header>
                 <div className="flex flex-1 flex-col gap-6 p-6">
-                    {/* Stats Grid */}
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <StatCard
                             title="Total Experiments"
@@ -84,14 +108,13 @@ export default function Page() {
                         />
                     </div>
 
-                    {/* Quick Actions */}
                     <Card>
                         <CardHeader>
                             <CardTitle>Quick Actions</CardTitle>
                             <CardDescription>Common tasks and operations</CardDescription>
                         </CardHeader>
                         <CardContent className="flex gap-4">
-                            <Button asChild>
+                            <Button asChild className="group">
                                 <Link href="/experiments/new">
                                     <FilePlus className="mr-2 h-4 w-4" />
                                     New Experiment
@@ -101,7 +124,6 @@ export default function Page() {
                     </Card>
 
                     <div className="grid gap-6 md:grid-cols-2">
-                        {/* Recent Experiments */}
                         <Card className="md:col-span-1">
                             <CardHeader>
                                 <CardTitle>Recent Experiments</CardTitle>
@@ -111,8 +133,6 @@ export default function Page() {
                                 <RecentExperiments />
                             </CardContent>
                         </Card>
-
-                        {/* Branch Distribution */}
                         <Card className="md:col-span-1">
                             <CardHeader>
                                 <CardTitle>Branch Distribution</CardTitle>

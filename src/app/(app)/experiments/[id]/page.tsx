@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,6 +26,7 @@ import { Button } from "@/components/ui/button"
 export default function ExperimentPage({ params }: { params: { id: string } }) {
   const { id } = params
   const router = useRouter()
+  const { data: session } = useSession()
   const [experiment, setExperiment] = useState<z.infer<typeof experimentFormSchema> | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -109,31 +111,33 @@ export default function ExperimentPage({ params }: { params: { id: string } }) {
               </Badge>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/experiments/edit/${id}`)}
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                if (confirm('Are you sure you want to delete this experiment?')) {
-                  const response = await fetch(`/api/experiments/${id}`, {
-                    method: 'DELETE',
-                  });
-                  if (response.ok) {
-                    router.push('/experiments');
+          {session?.user?.role === "TEACHER" && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/experiments/edit/${id}`)}
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (confirm('Are you sure you want to delete this experiment?')) {
+                    const response = await fetch(`/api/experiments/${id}`, {
+                      method: 'DELETE',
+                    });
+                    if (response.ok) {
+                      router.push('/experiments');
+                    }
                   }
-                }
-              }}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
-          </div>
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          )}
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
