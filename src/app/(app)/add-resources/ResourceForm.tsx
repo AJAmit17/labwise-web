@@ -33,6 +33,8 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 export default function ResourcePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<string>(departments[0]);
+  const [selectedProfessor, setSelectedProfessor] = useState<string>('');
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const form = useForm<ResourceFormData>({
     resolver: zodResolver(resourceSchema),
@@ -47,9 +49,31 @@ export default function ResourcePage() {
     },
   });
 
+  // Reset course when professor changes
+  useEffect(() => {
+    if (selectedProfessor) {
+      // Reset the course field when professor changes
+      form.setValue('course', '');
+    }
+  }, [selectedProfessor, form]);
+
   const onSubmit = async (data: ResourceFormData) => {
     try {
+      // Check if file is selected
+      if (!data.file || data.file.length === 0) {
+        setFileError("Please select a file to upload");
+        return;
+      }
+
+      // Check file size again as a fallback
+      if (data.file[0].size > 5 * 1024 * 1024) {
+        setFileError("File size exceeds the maximum limit of 5MB");
+        return;
+      }
+
+      setFileError(null);
       setIsUploading(true);
+
       const { cid } = await pinata.upload.file(data.file[0]);
 
       const formData = {
@@ -155,7 +179,13 @@ export default function ResourcePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Professor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedProfessor(value);
+                      }}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select professor" />
@@ -185,11 +215,11 @@ export default function ResourcePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {professorsByDepartment[selectedDepartment as keyof typeof professorsByDepartment]
-                          .find(prof => prof.name === form.getValues('professorName'))
+                        {selectedProfessor && professorsByDepartment[selectedDepartment as keyof typeof professorsByDepartment]
+                          .find(prof => prof.name === selectedProfessor)
                           ?.subjects.map((subject) => (
                             <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                          ))}
+                          )) || []}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -257,11 +287,23 @@ export default function ResourcePage() {
                 )}
               />
 
-              <FileUpload onChange={(files) => {
-                const dataTransfer = new DataTransfer();
-                files.forEach(file => dataTransfer.items.add(file));
-                form.setValue('file', dataTransfer.files);
-              }} />
+              <div className="space-y-2">
+                <FormLabel>Upload File</FormLabel>
+                <FileUpload
+                  maxSize={5 * 1024 * 1024} // 5MB limit
+                  description="Drag or drop your files here or click to upload (Max: 5MB)"
+                  onChange={(files) => {
+                    if (files.length > 0) {
+                      const dataTransfer = new DataTransfer();
+                      files.forEach(file => dataTransfer.items.add(file));
+                      form.setValue('file', dataTransfer.files);
+                      setFileError(null);
+                    }
+                  }}
+                />
+                {fileError && <p className="text-sm font-medium text-red-500">{fileError}</p>}
+              </div>
+
               <Button type="submit" disabled={isUploading}>
                 {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Upload Resource

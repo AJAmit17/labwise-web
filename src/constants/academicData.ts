@@ -1,48 +1,43 @@
 export const departments = [
-  'CSE',
+  // 'CSE',
   'CSE-DS',
-  'ECE',
-  'EEE',
-  'CEE',
-  'MCE',
-  'ISE'
+  // 'ECE',
+  // 'EEE',
+  // 'CEE',
+  // 'MCE',
+  // 'ISE'
 ] as const;
 
 export const professorsByDepartment = {
   'CSE': [
-    { name: 'Dr. Alan Turing', subjects: ['Data Structures', 'Algorithms', 'Computer Networks'] },
-    { name: 'Dr. Ada Lovelace', subjects: ['Database Systems', 'Operating Systems', 'Cloud Computing'] },
-    { name: 'Dr. John von Neumann', subjects: ['Computer Architecture', 'Digital Logic', 'Microprocessors'] }
+    // { name: 'Dr. Alan Turing', subjects: ['Data Structures', 'Algorithms', 'Computer Networks'] },
   ],
   'CSE-DS': [
-    { name: 'Dr. Sunil Kumar', subjects: ['AI/ML', 'Data Science', "Computer Vision"] },
-    { name: 'Dr. Joshua Daniel Raj', subjects: ['Computer Networks', 'Machine Learning', 'Signal Processing'] },
-    { name: 'Dr. Gordon Moore', subjects: ['Semiconductor Devices', 'Control Systems', 'Power Electronics'] }
+    // { name: 'Dr. Sunil Kumar', subjects: ['AI/ML'] },
+    // { name: 'Dr. Joshua Daniel Raj', subjects: ['DLD'] },
+    { name: 'Ms. Pallavi Nayak', subjects: ['Computer Networks', 'AI/ML'] },
+    { name: 'Ms. T Sasikala', subjects: ['Software Testing'] },
+    { name: 'Ms. Aanchal', subjects: ['Cyber Security'] },
+    { name: 'Ms. Kavitha U', subjects: ['Computer Networks', 'Predictive Analytics'] },
+    { name: 'Ms. Anju K', subjects: ['Cyber Security'] },
+    { name: 'Ms. Swathi Sehgal', subjects: ['Mobile Development(MAD LAB)'] },
+    { name: 'Dr. R Suganya', subjects: ['AI/ML'] },
+    { name: 'Mr. Sankhadeep Pujaru', subjects: ['Software Testing'] },
   ],
   'ECE': [
-    { name: 'Dr. Rudolf Diesel', subjects: ['Thermodynamics', 'Fluid Mechanics', 'Heat Transfer'] },
-    { name: 'Dr. Karl Benz', subjects: ['Machine Design', 'Manufacturing Processes', 'Automotive Engineering'] },
-    { name: 'Dr. James Watt', subjects: ['Engineering Mechanics', 'Material Science', 'Industrial Engineering'] }
+    // { name: 'Dr. Rudolf Diesel', subjects: ['Thermodynamics', 'Fluid Mechanics', 'Heat Transfer'] },
   ],
   'EEE': [
-    { name: 'Dr. Isambard Kingdom', subjects: ['Structural Engineering', 'Construction Management', 'Surveying'] },
-    { name: 'Dr. Emily Roebling', subjects: ['Geotechnical Engineering', 'Transportation Engineering', 'Environmental Engineering'] },
-    { name: 'Dr. Hardy Cross', subjects: ['Steel Structures', 'Concrete Technology', 'Highway Engineering'] }
+    // { name: 'Dr. Isambard Kingdom', subjects: ['Structural Engineering', 'Construction Management', 'Surveying'] },
   ],
   'CEE': [
-    { name: 'Dr. George Washington', subjects: ['Chemical Process', 'Unit Operations', 'Reaction Engineering'] },
-    { name: 'Dr. Fritz Haber', subjects: ['Process Control', 'Industrial Chemistry', 'Thermodynamics'] },
-    { name: 'Dr. Carl Bosch', subjects: ['Mass Transfer', 'Heat Transfer Operations', 'Plant Design'] }
+    // { name: 'Dr. George Washington', subjects: ['Chemical Process', 'Unit Operations', 'Reaction Engineering'] },
   ],
   'MCE': [
-    { name: 'Dr. George Washington', subjects: ['Chemical Process', 'Unit Operations', 'Reaction Engineering'] },
-    { name: 'Dr. Fritz Haber', subjects: ['Process Control', 'Industrial Chemistry', 'Thermodynamics'] },
-    { name: 'Dr. Carl Bosch', subjects: ['Mass Transfer', 'Heat Transfer Operations', 'Plant Design'] }
+    // { name: 'Dr. George Washington', subjects: ['Chemical Process', 'Unit Operations', 'Reaction Engineering'] },
   ],
   'ISE': [
-    { name: 'Dr. George Washington', subjects: ['Chemical Process', 'Unit Operations', 'Reaction Engineering'] },
-    { name: 'Dr. Fritz Haber', subjects: ['Process Control', 'Industrial Chemistry', 'Thermodynamics'] },
-    { name: 'Dr. Carl Bosch', subjects: ['Mass Transfer', 'Heat Transfer Operations', 'Plant Design'] }
+    // { name: 'Dr. George Washington', subjects: ['Chemical Process', 'Unit Operations', 'Reaction Engineering'] },
   ]
 } as const;
 

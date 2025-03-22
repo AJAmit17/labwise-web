@@ -28,13 +28,27 @@ const secondaryVariant = {
 
 export const FileUpload = ({
   onChange,
+  maxSize = 5 * 1024 * 1024, // 5MB default max size
+  description,
 }: {
   onChange?: (files: File[]) => void;
+  maxSize?: number;
+  description?: string;
 }) => {
   const [files, setFiles] = useState<File[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (newFiles: File[]) => {
+    // Check file size
+    const oversizedFiles = newFiles.filter(file => file.size > maxSize);
+    
+    if (oversizedFiles.length > 0) {
+      setError(`File size exceeds the maximum limit of ${maxSize / (1024 * 1024)}MB`);
+      return;
+    }
+    
+    setError(null);
     setFiles((prevFiles) => [...prevFiles, ...newFiles]);
     onChange && onChange(newFiles);
   };
@@ -47,8 +61,18 @@ export const FileUpload = ({
     multiple: false,
     noClick: true,
     onDrop: handleFileChange,
-    onDropRejected: (error) => {
-      console.log(error);
+    maxSize,
+    onDropRejected: (fileRejections) => {
+      const sizeError = fileRejections.some(
+        rejection => rejection.errors.some(err => err.code === "file-too-large")
+      );
+      
+      if (sizeError) {
+        setError(`File size exceeds the maximum limit of ${maxSize / (1024 * 1024)}MB`);
+      } else {
+        setError("File upload failed");
+      }
+      console.log(fileRejections);
     },
   });
 
@@ -64,7 +88,10 @@ export const FileUpload = ({
           id="file-upload-handle"
           type="file"
           aria-label="File upload"
-          onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
+          onChange={(e) => {
+            const files = Array.from(e.target.files || []);
+            handleFileChange(files);
+          }}
           className="hidden"
         />
         <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]">
@@ -75,8 +102,13 @@ export const FileUpload = ({
             Upload file
           </p>
           <p className="relative z-20 font-sans font-normal text-neutral-400 dark:text-neutral-400 text-base mt-2">
-            Drag or drop your files here or click to upload
+            {description || `Drag or drop your files here or click to upload (Max: ${maxSize / (1024 * 1024)}MB)`}
           </p>
+          {error && (
+            <p className="relative z-20 font-sans font-normal text-red-500 text-base mt-2">
+              {error}
+            </p>
+          )}
           <div className="relative w-full mt-10 max-w-xl mx-auto">
             {files.length > 0 &&
               files.map((file, idx) => (
